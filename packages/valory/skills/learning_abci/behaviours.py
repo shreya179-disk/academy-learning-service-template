@@ -22,6 +22,10 @@
 from abc import ABC
 from typing import Generator, Set, Type, cast
 
+from aea_ledger_cosmos import Any
+
+from packages.valory.contracts.erc20.contract import ERC20
+from packages.valory.protocols.contract_api.message import ContractApiMessage
 from packages.valory.skills.abstract_round_abci.base import AbstractRound
 from packages.valory.skills.abstract_round_abci.behaviours import (
     AbstractRoundBehaviour,
@@ -42,6 +46,7 @@ from packages.valory.skills.learning_abci.rounds import (
     TxPreparationRound,
 )
 
+WaitableConditionType = Generator[None, None, bool]
 
 HTTP_OK = 200
 GNOSIS_CHAIN_ID = "gnosis"
@@ -125,6 +130,70 @@ class DecisionMakingBehaviour(
         event = Event.DONE.value
         self.context.logger.info(f"Event is {event}")
         return event
+    
+    def check_balance(self) -> WaitableConditionType:
+        """Check the safe's balance."""
+        if self.benchmarking_mode.enabled:
+            self._mock_balance_check()
+            return True
+
+        response_msg = yield from self.get_contract_api_response(
+            performative=ContractApiMessage.Performative.GET_RAW_TRANSACTION,  # type: ignore
+            contract_address=self.collateral_token,
+            contract_id=str(ERC20.contract_id),
+            contract_callable="check_balance",
+            account=self.synchronized_data.safe_contract_address,
+        )
+        if response_msg.performative != ContractApiMessage.Performative.RAW_TRANSACTION:
+            self.context.logger.error(
+                f"Could not calculate the balance of the safe: {response_msg}"
+            )
+            return False
+
+        token = response_msg.raw_transaction.body.get("token", None)
+        wallet = response_msg.raw_transaction.body.get("wallet", None)
+        if token is None or wallet is None:
+            self.context.logger.error(
+                f"Something went wrong while trying to get the balance of the safe: {response_msg}"
+            )
+            return False
+
+        self.token_balance = int(token)
+        self.wallet_balance = int(wallet)
+        self._report_balance()
+        return True
+    def contract_interact(
+        self,
+        performative: ContractApiMessage.Performative,
+        contract_address: str,
+        contract_public_id: ERC20,
+        contract_callable: str,
+        data_key: str,
+        placeholder: str,
+        **kwargs: Any,
+    ) -> WaitableConditionType:
+        """Interact with a contract."""
+        contract_id = str(contract_public_id)
+        response_msg = yield from self.get_contract_api_response(
+            performative,
+            contract_address,
+            contract_id,
+            contract_callable,
+            **kwargs,
+        )
+        if response_msg.performative != ContractApiMessage.Performative.RAW_TRANSACTION:
+            self.default_error(contract_id, contract_callable, response_msg)
+            return False
+
+        propagated = self._propagate_contract_messages(response_msg)
+        data = response_msg.raw_transaction.body.get(data_key, None)
+        if data is None:
+            if not propagated:
+                self.default_error(contract_id, contract_callable, response_msg)
+            return False
+
+        setattr(self, placeholder, data)
+        return True
 
 
 class TxPreparationBehaviour(

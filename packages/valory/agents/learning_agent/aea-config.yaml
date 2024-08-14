@@ -17,6 +17,7 @@ connections:
 contracts:
 - valory/gnosis_safe:0.1.0:bafybeiakydsxx4j7oxwyucnzixlrhvfbje5cdjl6naiiun4aommdfr5pkq
 - valory/gnosis_safe_proxy_factory:0.1.0:bafybeih3l5lgrccd45ymd4lfru22ex2wgmjzqne37rja4ehxgzirabm6v4
+- valory/erc20/0.1.0:bafybeia7a7mfjeok4ywpmejz74msofagagcentsudqxfojadmxlur5qolu
 - valory/multisend:0.1.0:bafybeig5byt5urg2d2bsecufxe5ql7f4mezg3mekfleeh32nmuusx66p4y
 - valory/service_registry:0.1.0:bafybeie5fakcu3fnpako5stfzmfz2a65ruodusia3ap6othlmtiug6kfvm
 protocols:
@@ -120,7 +121,7 @@ type: skill
 models:
   benchmark_tool:
     args:
-      log_dir: ${str:/logs}
+      log_dir: ${str:/System/Volumes/Data/logs}
   params:
     args:
       cleanup_history_depth: 1
@@ -161,7 +162,7 @@ models:
       service_id: learning
       service_registry_address: ${str:null}
       setup:
-        all_participants: ${list:["0x615d3278680337e2D39C3bc5042D959C7938B917"]}
+        all_participants: ${list:["0x81aCc4c11e35E484258218787B14b0765F93dAdf"]}
         safe_contract_address: ${str:0x5C5b146905c11Ee1fE7260c0338b52DCA9582a13}
         consensus_threshold: ${int:null}
       share_tm_config_on_startup: ${bool:false}
@@ -188,3 +189,5 @@ models:
       default_chain_id: ${str:gnosis}
       termination_from_block: ${int:34088325}
       transfer_target_address: ${str:0x615d3278680337e2D39C3bc5042D959C7938B917}
+     #0x5C5b146905c11Ee1fE7260c0338b52DCA9582a13
+     #0x6810e776880C02933D47DB1b9fc05908e5386b96
