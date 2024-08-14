@@ -162,6 +162,7 @@ class DecisionMakingBehaviour(
         self.wallet_balance = int(wallet)
         self._report_balance()
         return True
+    '''
     def contract_interact(
         self,
         performative: ContractApiMessage.Performative,
@@ -194,7 +195,7 @@ class DecisionMakingBehaviour(
 
         setattr(self, placeholder, data)
         return True
-
+'''
 
 class TxPreparationBehaviour(
     LearningBaseBehaviour
